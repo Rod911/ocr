@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>OCR</title>
+
+	<style>
+		#hocr,
+		#hocr * {
+			margin: 0;
+		}
+
+		#hocr [title] {
+			outline: 1px solid red;
+			display: inline-block;
+			padding: 4px;
+			margin-bottom: 1px;
+		}
+
+		#hocr .ocr_line,
+		#hocr .ocr_par {
+			display: block;
+		}
+
+	</style>
+</head>
+
+<body>
+	<table border="1" style="width: 100%; border-collapse: collapse;">
+		<tr>
+			<td width="400px" style="vertical-align: top;">
+				<img src="" alt="" id="img" width="400" style="display: block;">
+			</td>
+			<td style="vertical-align: top; padding: 10px;">
+				<p>OCR Text: </p>
+				<pre id="text">Loading...</pre>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2">
+				<p id="hocr"></p>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2">
+				<pre id="tsv"></pre>
+			</td>
+		</tr>
+	</table>
+
+	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.esm.min.js" integrity="sha512-tzs2eMgz5PyS+ZnNMLQTeM0kpQ4XMBwJDotj1zbB76QouN+jfpptFqPmDErF5gLW3ONNlwOTLSUIc8YMLYLqug==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> -->
+	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/worker.min.js" integrity="sha512-KdLM/h+Tfhh31fk5erXR2OiQ1UTLoewk4fNKJ4Br+N7V4Dt1M51pS22cLDK1f5WJcDT0hTGOWPrHSwPDTIqxtg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js" integrity="sha512-USe/+FvMofxl3VkujITEtiLEln+FeeILjPPF7eEbAfw5EnrWpLws86wVTw6ZFr/iABUjq6W0Ok6WppD5NzvEfQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+	<script>
+		// fetch url param 'file'
+		const url = new URL(window.location.href);
+		let file = url.searchParams.get('file');
+		// urldecode file
+		file = decodeURIComponent(file);
+
+		document.querySelector('#img').src = file;
+
+		const scheduler = Tesseract.createScheduler();
+
+		// Creates worker and adds to scheduler
+		const workerGen = async () => {
+			const worker = await Tesseract.createWorker();
+			await worker.loadLanguage('eng');
+			await worker.initialize('eng');
+			scheduler.addWorker(worker);
+		}
+
+		const workerN = 1;
+		(async () => {
+			const resArr = Array(workerN);
+			for (let i = 0; i < workerN; i++) {
+				resArr[i] = workerGen();
+			}
+			await Promise.all(resArr);
+			/** Add 4 recognition jobs */
+			const results = await Promise.all(
+				Array(1).fill(0).map(
+					() => (
+						scheduler.addJob('recognize', file).then((x) => {
+							console.log(x);
+							document.querySelector('#text').innerHTML = x.data.text;
+							document.querySelector('#hocr').innerHTML = x.data.hocr;
+							document.querySelector('#tsv').innerHTML = x.data.tsv;
+						})
+					)
+				)
+			)
+			await scheduler.terminate(); // It also terminates all workers.
+		})();
+	</script>
+</body>
+
+</html>
