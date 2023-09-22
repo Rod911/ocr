@@ -2,6 +2,7 @@
 // upload file to assets dir with a random generated name
 $target_dir = "assets/";
 $input_name = "image";
+$message = "";
 if (isset($_FILES[$input_name])) {
 	$imageFileType = pathinfo($_FILES[$input_name]["name"], PATHINFO_EXTENSION);
 	$target_file = $target_dir . md5(time()) . "." . $imageFileType;
@@ -10,10 +11,10 @@ if (isset($_FILES[$input_name])) {
 	if (isset($_POST["submit"])) {
 		$check = getimagesize($_FILES[$input_name]["tmp_name"]);
 		if ($check !== false) {
-			echo "File is an image - " . $check["mime"] . ".";
+			$message = "File is an image - " . $check["mime"] . ".";
 			$uploadOk = 1;
 		} else {
-			echo "File is not an image.";
+			$message = "File is not an image.";
 			$uploadOk = 0;
 		}
 	}
@@ -31,21 +32,22 @@ if (isset($_FILES[$input_name])) {
 	if (
 		in_array(strtolower($imageFileType), ["jpg", "jpeg", "png", "gif"]) === false
 	) {
-		echo "Sorry, only JPG, JPEG, PNG & GIF files are allowed.";
+		$message = "Sorry, only JPG, JPEG, PNG & GIF files are allowed.";
 		$uploadOk = 0;
 	}
 	// Check if $uploadOk is set to 0 by an error
 	if ($uploadOk == 0) {
-		echo "Sorry, your file was not uploaded.";
+		$message = "Sorry, your file was not uploaded.";
 		// if everything is ok, try to upload file
 	} else {
 		if (move_uploaded_file($_FILES[$input_name]["tmp_name"], $target_file)) {
 			// echo "The file " . $target_file . " has been uploaded.";
 			header("Location: ocr.html?file=" . $target_file);
 		} else {
-			echo "Sorry, there was an error uploading your file.";
+			$message = "Sorry, there was an error uploading your file.";
 		}
 	}
 } else {
-	echo "No file selected.";
+	$message = "No file selected.";
 }
+echo $message;
